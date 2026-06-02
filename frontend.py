@@ -1,7 +1,3 @@
-# Requisitos de instalación:
-# pip install streamlit requests streamlit-ace
-# Ejecutar la aplicación localmente:
-# streamlit run frontend.py
 
 import concurrent.futures
 from datetime import datetime
@@ -29,15 +25,161 @@ st.markdown(
     """
     <style>
     .stApp {
-        background: linear-gradient(180deg, #0f172a 0%, #111827 40%, #1f2937 100%);
+        background: radial-gradient(circle at top, #0f172a 0%, #111827 28%, #0f172a 60%, #111827 100%);
         color: #f8fafc;
+        font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    .login-box {
+
+    .hero-card {
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(56, 189, 248, 0.18);
+        border-radius: 1.6rem;
+        padding: 1.8rem 2rem;
+        margin-bottom: 1.7rem;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.28);
+    }
+
+    .hero-card-title {
+        font-size: 2.4rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: #ffffff;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .hero-card-copy {
+        font-size: 1rem;
+        color: #cbd5e1;
+        line-height: 1.8;
+        margin: 0;
+    }
+
+    .hero-card strong {
+        color: #38bdf8;
+    }
+
+    .section-card {
         background: rgba(15, 23, 42, 0.88);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 1.6rem;
         padding: 2rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 0 28px 60px rgba(15, 23, 42, 0.35);
+        backdrop-filter: blur(14px);
     }
+
+    .login-box {
+        background: rgba(15, 23, 42, 0.95);
+        padding: 2rem 1.9rem;
+        border-radius: 1.6rem;
+        border: 1px solid rgba(96, 165, 250, 0.20);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.30);
+        min-height: auto;
+        max-width: 100%;
+        margin-top: 1rem;
+    }
+
+    .login-box .login-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        margin-bottom: 1.6rem;
+    }
+
+    .login-box .login-title {
+        color: #f8fafc;
+        font-size: 2.4rem;
+        font-weight: 900;
+        margin: 0;
+        letter-spacing: -0.03em;
+    }
+
+    .login-box .login-cta {
+        color: #e2e8f0;
+        font-size: 1.05rem;
+        margin: 0;
+        line-height: 1.75;
+    }
+
+    .login-box .login-pill {
+        display: inline-block;
+        background: rgba(59, 130, 246, 0.24);
+        color: #bfdbfe;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        margin-bottom: 1rem;
+    }
+
+    .login-box .stTextInput>div>div>input,
+    .login-box .stTextInput>div>div>textarea {
+        background: rgba(30, 41, 59, 0.96) !important;
+        border: 1px solid rgba(96, 165, 250, 0.20) !important;
+        border-radius: 1rem !important;
+        color: #f8fafc !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+    }
+
+    .login-box .stTextInput>label {
+        color: #cbd5e1 !important;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+    }
+
+    .login-box .stButton>button {
+        background: linear-gradient(135deg, #fb7185 0%, #f97316 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 1rem !important;
+        box-shadow: 0 14px 36px rgba(251, 113, 133, 0.28);
+        padding: 1rem 1.8rem !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+    }
+
+    .login-box .stButton>button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 36px rgba(56, 189, 248, 0.32);
+    }
+
+    .login-box .button-row {
+        display: flex;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .login-detail {
+        background: rgba(14, 165, 233, 0.12);
+        border-left: 4px solid #38bdf8;
+        padding: 1rem 1.1rem;
+        border-radius: 1rem;
+        color: #cbd5e1;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .login-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .login-features li {
+        margin-bottom: 0.9rem;
+        color: #e2e8f0;
+        font-size: 0.98rem;
+        line-height: 1.7;
+    }
+
+    .login-features li::before {
+        content: '✓';
+        margin-right: 0.8rem;
+        color: #38bdf8;
+    }
+
     .sidebar .sidebar-content {
         background: rgba(15, 23, 42, 0.92);
     }
@@ -64,17 +206,15 @@ def login_user() -> None:
 
 
 def render_login_screen() -> None:
-    st.markdown("# Plataforma de Auditoría de Código")
-    st.markdown("### Bienvenido. Ingresa para comenzar a auditar tus consultas SQL.")
     st.markdown(
-        """
-        Esta interfaz simula el flujo de sesión local.
-        El backend de Java aún no controla el login real, por lo que la sesión se mantiene
-        en el frontend hasta que se cierre la aplicación.
-        """
+        "<div class='hero-card'>"
+        "<h1 class='hero-card-title'>Plataforma de Auditoría de Código</h1>"
+        "<p class='hero-card-copy'>Inicia sesión para auditar consultas SQL de forma local. Tu experiencia será clara, confiable y con resultados organizados por severidad.</p>"
+        "</div>",
+        unsafe_allow_html=True,
     )
 
-    col_left, col_right = st.columns([2, 1])
+    col_left, col_right = st.columns([2.2, 1])
     with col_left:
         st.markdown(
             """
@@ -88,15 +228,26 @@ def render_login_screen() -> None:
 
     with col_right:
         st.markdown("<div class='login-box'>", unsafe_allow_html=True)
-        st.subheader("Acceso a la plataforma")
+        st.markdown("<span class='login-pill'>Acceso seguro</span>", unsafe_allow_html=True)
+        st.markdown("<h2 class='login-title'>Bienvenido al panel</h2>", unsafe_allow_html=True)
+        st.markdown(
+            "<p class='login-cta'>Accede a tu auditoría de código local con una interfaz limpia y resultados directos.</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
         st.text_input("Usuario", key="login_username")
         st.text_input("Contraseña", type="password", key="login_password")
-        st.write("")
         if st.button("Iniciar Sesión", type="primary"):
-            login_user()
+            username = st.session_state.get("login_username", "")
+            password = st.session_state.get("login_password", "")
+            if not username or not username.strip():
+                st.error("El campo 'Usuario' no puede estar vacío.")
+            elif not password or not password.strip():
+                st.error("El campo 'Contraseña' no puede estar vacío.")
+            else:
+                login_user()
         if st.button("Registrarse"):
             st.success("Registro simulado completado. Ahora pulsa Iniciar Sesión.")
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def fetch_audit_history() -> List[Dict[str, Any]]:
