@@ -2,6 +2,8 @@ import streamlit as st
 from datetime import datetime
 from api_client import login_user_api, register_user_api, ask_orchestrator_api, fetch_chat_history_api
 from styles import apply_custom_styles
+import json
+import time 
 
 try:
     from streamlit_ace import st_ace
@@ -103,37 +105,28 @@ def render_dashboard():
 
     st.markdown(f"# Panel de Auditoría Académica")
     
-    # ==========================================================
-    # 🌟 NUEVO: SELECTOR DINÁMICO DE LENGUAJE
-    # ==========================================================
+    # Selector de lenguaje
     col_lang, _ = st.columns([1, 2])
     with col_lang:
         lang_opciones = {"SQL": "sql", "Java": "java", "Python": "python"}
         lang_seleccionado = st.selectbox("Seleccioná el lenguaje a auditar:", list(lang_opciones.keys()))
-        lang_clave = lang_opciones[lang_seleccionado] # Esto guarda "sql", "java" o "python"
+        lang_clave = lang_opciones[lang_seleccionado]
 
     st.markdown("### 💻 Caja de Entrada de Código")
     if ACE_AVAILABLE:
-        # El componente st_ace ahora cambia dinámicamente su resaltado según lo que elijas en el combo
         code_input = st_ace(language=lang_clave, theme="monokai", height=200, font_size=15, key=f"ace_editor_{lang_clave}")
     else:
         code_input = st.text_area("Escribe tu consulta:", height=200, placeholder="Escribe el código aquí...")
-
-    import time 
 
     if st.button("Enviar al Orquestador", type="primary"):
         if code_input.strip():
             with st.spinner("Java procesando con la IA y guardando en ambas nubes..."):
                 
-                # Generación única de ID basada en milisegundos
                 nuevo_audit_id = int(time.time() * 1000)
                 st.session_state.current_audit_id = nuevo_audit_id
                 
-                # Recuperamos el ID del usuario logueado
                 user_id_actual = st.session_state.user_info.get("id", 1)
                 
-                # === ENVIAMOS EL LENGUAJE DINÁMICO A JAVA ===
-                # Pasamos 'lang_clave' en lugar del string fijo "sql"
                 res = ask_orchestrator_api(st.session_state.current_audit_id, code_input, user_id_actual, lang_clave)
                 
                 if res["success"]:
@@ -157,10 +150,61 @@ def render_dashboard():
         
         if role == "user":
             with st.chat_message("user"):
-                st.write(f"**Alumno ({time_str}):** {content}")
+                st.write(f"**Alumno ({time_str}):**")
+                st.code(content, language=lang_clave)
         else:
             with st.chat_message("assistant"):
-                st.info(f"**Asistente IA ({time_str}):** {content}")
+                st.markdown(f"**Asistente IA ({time_str}):**")
+                
+                # Intentamos parsear el contenido por si es el JSON estructurado
+                try:
+                    data_json = json.loads(content)
+                    
+                    # Extraemos el puntaje general
+                    score = data_json.get("score_general", 0)
+                    
+                    # Dibujamos una tarjeta visual para el Score
+                    if score >= 80:
+                        st.success(f"### 🎯 Puntaje de Calidad: {score}/100")
+                    elif score >= 50:
+                        st.warning(f"### ⚠️ Puntaje de Calidad: {score}/100")
+                    else:
+                        st.error(f"### 🚨 Puntaje de Calidad: {score}/100")
+                    
+                    # Iteramos y pintamos cada uno de los hallazgos en acordeones estéticos
+                    for finding in data_json.get("findings", []):
+                        severity = finding.get("severity", "Info")
+                        category = finding.get("category", "General")
+                        title = finding.get("title", "Hallazgo")
+                        desc = finding.get("description", "")
+                        lines = finding.get("affected_lines", "0")
+                        fix = finding.get("suggested_fix", "")
+                        pedagogical = finding.get("pedagogical_explanation", "")
+                        
+                        # Definimos el emoji según la gravedad
+                        if severity.lower() in ["critico", "crítico", "high"]:
+                            emoji = "🚨"
+                        elif severity.lower() in ["sugerencia", "info", "low"]:
+                            emoji = "💡"
+                        else:
+                            emoji = "⚠️"
+                            
+                        # Desplegable premium por cada hallazgo
+                        with st.expander(f"{emoji} [{severity.upper()}] {title} ({category})"):
+                            st.write(f"**Descripción:** {desc}")
+                            st.write(f"📍 **Línea(s) afectada(s):** `{lines}`")
+                            
+                            if fix:
+                                st.markdown("**🔧 Corrección Sugerida:**")
+                                st.code(fix, language=lang_clave)
+                                
+                            if pedagogical:
+                                st.markdown("**👨‍🏫 Nota Pedagógica para el Alumno:**")
+                                st.info(pedagogical)
+                                
+                except json.JSONDecodeError:
+                    # Si no es un JSON estructurado (un mensaje de chat común), se muestra plano
+                    st.info(content)
 
 # Flujo Principal
 if st.session_state.logged_in:
