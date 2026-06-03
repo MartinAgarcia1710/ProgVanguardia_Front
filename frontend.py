@@ -209,7 +209,7 @@ def render_login_screen() -> None:
     st.markdown(
         "<div class='hero-card'>"
         "<h1 class='hero-card-title'>Plataforma de Auditoría de Código</h1>"
-        "<p class='hero-card-copy'>Inicia sesión para auditar consultas SQL de forma local. Tu experiencia será clara, confiable y con resultados organizados por severidad.</p>"
+        "<p class='hero-card-copy'>Inicia sesión para auditar fragmentos de código en distintos lenguajes. Obtén detección de vulnerabilidades, errores de sintaxis y recomendaciones de refactorización.</p>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -219,9 +219,10 @@ def render_login_screen() -> None:
         st.markdown(
             """
             #### ¿Qué puedes hacer?
-            - Pegar tu consulta SQL en un editor de código estilizado.
-            - Presionar `Auditar Código` para enviar la consulta.
-            - Ver resultados clasificados por severidad.
+            - Pegar tu fragmento de código en un editor estilizado.
+            - Seleccionar el lenguaje de origen (por ejemplo, Python, Java o Kotlin).
+            - Presionar `Auditar Código` para enviar el fragmento a revisión.
+            - Ver resultados clasificados por severidad y tipo de hallazgo.
             - Revisar el historial de auditorías en la barra lateral.
             """
         )
@@ -267,7 +268,7 @@ def fetch_audit_history() -> List[Dict[str, Any]]:
         {
             "audit_date": "2026-05-29T16:40:00",
             "status": "COMPLETED",
-            "summary": "Revisión de inyección SQL detectada",
+            "summary": "Revisión de vulnerabilidad detectada en fragmento de código",
             "findings": 2,
         },
         {
@@ -316,32 +317,32 @@ def render_code_editor(initial_value: str = "") -> str:
     if ACE_AVAILABLE:
         return st_ace(
             value=initial_value,
-            language="sql",
+            language="python",
             theme="monokai",
-            key="sql_editor",
+            key="code_editor",
             height=320,
             font_size=16,
             tab_size=4,
             wrap=True,
             min_lines=12,
-            placeholder="Pega aquí tu consulta o script SQL...",
+            placeholder="Pega aquí tu fragmento de código en Python, Java, Kotlin u otro lenguaje...",
         )
 
     return st.text_area(
-        "Pega tu consulta SQL aquí:",
+        "Pega tu fragmento de código aquí:",
         value=initial_value,
         height=320,
-        key="sql_editor",
-        placeholder="Pega aquí tu código SQL...",
+        key="code_editor",
+        placeholder="Pega aquí tu fragmento de código...",
         help="Si no está instalado streamlit-ace, se usa un editor de texto alternativo.",
         max_chars=30000,
     )
 
 
-def post_audit_request(sql_query: str) -> requests.Response:
+def post_audit_request(code_snippet: str, language: str) -> requests.Response:
     return requests.post(
         BACKEND_AUDIT_URL,
-        json={"sql_query": sql_query},
+        json={"code": code_snippet, "language": language},
         timeout=12,
     )
 
@@ -390,7 +391,7 @@ def render_audit_results(result: Dict[str, Any]) -> None:
 def render_dashboard() -> None:
     st.markdown("# Panel de Auditoría de Código")
     st.markdown(
-        "Bienvenido al panel principal. Aquí puedes pegar tu consulta SQL, auditarla y revisar hallazgos de seguridad y calidad."
+        "Bienvenido al panel principal. Aquí puedes pegar un fragmento de código en diversos lenguajes, auditarlo y revisar hallazgos de seguridad, sintaxis y calidad."
     )
 
     history = fetch_audit_history()
@@ -398,17 +399,23 @@ def render_dashboard() -> None:
 
     columns = st.columns([3, 1])
     with columns[0]:
-        st.markdown("### Editor de Código SQL")
-        sql_query = render_code_editor()
+        st.markdown("### Editor de Código")
+        language = st.selectbox(
+            "Lenguaje",
+            ["Python", "Java", "Kotlin"],
+            index=0,
+            help="Selecciona el lenguaje del fragmento de código a auditar.",
+        )
+        code_snippet = render_code_editor()
 
         if st.button("Auditar Código", type="primary"):
-            if not sql_query or not sql_query.strip():
-                st.error("Por favor, ingresa una consulta SQL antes de auditar.")
+            if not code_snippet or not code_snippet.strip():
+                st.error("Por favor, ingresa un fragmento de código antes de auditar.")
             else:
                 try:
-                    with st.spinner("Enviando consulta al orquestador de auditoría..."):
+                    with st.spinner("Enviando fragmento al orquestador de auditoría..."):
                         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                            future = executor.submit(post_audit_request, sql_query)
+                            future = executor.submit(post_audit_request, code_snippet, language)
                             response = future.result()
 
                     if response.status_code == 200:
@@ -436,7 +443,7 @@ def render_dashboard() -> None:
         st.markdown("### Estado del Sistema")
         st.info("")
         st.markdown("**Flujo de sesión:** Simulado con `st.session_state`.")
-        st.markdown("**Editor:** Sintaxis SQL y tipografía monospace.")
+        st.markdown("**Editor:** Soporta fragmentos de código en distintos lenguajes y tipografía monospace.")
         if ACE_AVAILABLE:
             st.success("")
         else:
