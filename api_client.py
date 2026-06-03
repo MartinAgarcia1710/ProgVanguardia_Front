@@ -12,7 +12,7 @@ def register_user_api(username: str, email: str, password_hash: str) -> Dict[str
         "passwordHash": password_hash,
         "role": "STUDENT"
     }
-    response = requests.post(url, json=payload, timeout=5)
+    response = requests.post(url, json=payload, timeout=20)
     if response.status_code == 201:
         return {"success": True, "data": response.json()}
     else:
