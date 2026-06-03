@@ -103,31 +103,38 @@ def render_dashboard():
 
     st.markdown(f"# Panel de Auditoría Académica")
     
-    # Renderizado del editor
+    # ==========================================================
+    # 🌟 NUEVO: SELECTOR DINÁMICO DE LENGUAJE
+    # ==========================================================
+    col_lang, _ = st.columns([1, 2])
+    with col_lang:
+        lang_opciones = {"SQL": "sql", "Java": "java", "Python": "python"}
+        lang_seleccionado = st.selectbox("Seleccioná el lenguaje a auditar:", list(lang_opciones.keys()))
+        lang_clave = lang_opciones[lang_seleccionado] # Esto guarda "sql", "java" o "python"
+
     st.markdown("### 💻 Caja de Entrada de Código")
     if ACE_AVAILABLE:
-        code_input = st_ace(language="sql", theme="monokai", height=200, font_size=15, key="ace_editor")
+        # El componente st_ace ahora cambia dinámicamente su resaltado según lo que elijas en el combo
+        code_input = st_ace(language=lang_clave, theme="monokai", height=200, font_size=15, key=f"ace_editor_{lang_clave}")
     else:
-        code_input = st.text_area("Escribe tu consulta:", height=200, placeholder="SELECT * FROM...")
+        code_input = st.text_area("Escribe tu consulta:", height=200, placeholder="Escribe el código aquí...")
 
-    import time # Asegurate de tener este import arriba o ponelo acá
+    import time 
 
     if st.button("Enviar al Orquestador", type="primary"):
         if code_input.strip():
             with st.spinner("Java procesando con la IA y guardando en ambas nubes..."):
                 
-                # === GENERACIÓN AUTOMÁTICA Y ÚNICA DE ID ===
-                # Genera un número entero único basado en los milisegundos actuales
+                # Generación única de ID basada en milisegundos
                 nuevo_audit_id = int(time.time() * 1000)
-                
-                # Guardamos este ID en la sesión para que el historial lo recuerde si es necesario
                 st.session_state.current_audit_id = nuevo_audit_id
                 
                 # Recuperamos el ID del usuario logueado
                 user_id_actual = st.session_state.user_info.get("id", 1)
                 
-                # Enviamos el ID autogenerado a Java
-                res = ask_orchestrator_api(nuevo_audit_id, code_input, user_id_actual)
+                # === ENVIAMOS EL LENGUAJE DINÁMICO A JAVA ===
+                # Pasamos 'lang_clave' en lugar del string fijo "sql"
+                res = ask_orchestrator_api(st.session_state.current_audit_id, code_input, user_id_actual, lang_clave)
                 
                 if res["success"]:
                     st.session_state.last_audit = res["data"]

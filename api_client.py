@@ -31,12 +31,13 @@ def login_user_api(email: str, password_raw: str) -> Dict[str, Any]:
     else:
         return {"success": False, "error": response.json().get("error", "Credenciales inválidas")}
 
-def ask_orchestrator_api(audit_id: int, prompt: str, user_id: int) -> Dict[str, Any]:
+def ask_orchestrator_api(audit_id: int, prompt: str, user_id: int, language: str = "sql") -> Dict[str, Any]:
     url = f"{BASE_URL}/orchestrator/ask"
     payload = {
         "auditId": int(audit_id),
         "prompt": str(prompt).strip(),
-        "userId": int(user_id) # <-- Mandamos el ID real a Java
+        "userId": int(user_id),
+        "language": str(language) # <-- Viaja al mapa de Java
     }
     # ... el resto del código de la función queda exactamente igual ...
     
