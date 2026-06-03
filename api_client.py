@@ -1,7 +1,7 @@
 import requests
 from typing import Any, Dict, Optional
 
-BASE_URL = "http://localhost:8080/api"
+BASE_URL = "https://progvanguardia-back.onrender.com/api"
 
 def register_user_api(username: str, email: str, password_hash: str) -> Dict[str, Any]:
     """Llama al endpoint /api/auth/register de Java"""
